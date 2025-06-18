@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend.dockerfile
+    container_name: hospital-backend
+    ports:
+      - "5000:5000" # Expose backend on port 5000
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/hospital # Connect to 'mongo' service in Docker network
+    depends_on:
+      - mongo # Ensure MongoDB is ready before starting the backend
+
+  frontend:
+    build:
+      context: ./hospital-mgmt-app/
+      dockerfile: frontend.dockerfile
+    container_name: hospital-frontend
+    ports:
+      - "80:80" # Expose frontend on port 80
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017" # Expose MongoDB on port 27017 for local access
+    volumes:
+      - mongo-data:/data/db # Persist MongoDB data
+    environment:
+      - MONGO_INITDB_DATABASE=hospital # Initialize MongoDB with 'hospital' database
+
+volumes:
+  mongo-data: # Named volume to persist MongoDB data across restarts

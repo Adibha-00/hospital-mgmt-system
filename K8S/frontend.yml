@@ -1,0 +1,52 @@
+apiVersion: apps/v1   # Specifies the API version for the Deployment resource.
+kind: Deployment      # Defines a Kubernetes Deployment resource.
+metadata:
+  name: frontend     # The name of the deployment.
+
+spec:
+  replicas: 1        # The number of pod replicas to be created.
+  selector:
+    matchLabels:
+      app: frontend  # Specifies the label selector to match pods with the label `app: frontend`.
+
+  template:          # Defines the pod template that will be used to create the pods.
+    metadata:
+      labels:
+        app: frontend  # Labels applied to the pod for identification.
+
+    spec:
+      initContainers:  # Defines an init container that runs before the main container starts.
+      - name: wait-for-backend   # The name of the init container.
+        image: alpine          # The container image to be used.
+        command: ["sh", "-c", "until nc -z backend 5000; do echo waiting for backend; sleep 2; done;"] # The command that will be executed inside the container.
+           
+          # This command checks if the `backend` service is available on port 5000 before starting the frontend container.
+
+      containers:   # Defines the main container that runs the frontend application.
+      - name: frontend    # Name of the container.
+        image: maareech/hospital-frontend:1.0.0  # The Docker image for the frontend application.
+        ports:
+        - containerPort: 80  # The port inside the container that the application listens on.
+
+        env:  # Defines environment variables for the container.
+        - name: BACKEND_URL   
+          value: http://backend.default.svc.cluster.local:5000 # Sets the `BACKEND_URL` environment variable to point to the backend service.
+
+---
+
+apiVersion: v1   # Specifies the API version for the Service resource.
+kind: Service    # Defines a Kubernetes Service resource.
+metadata:
+  name: frontend  # The name of the service.
+
+spec:
+  selector:
+    app: frontend  # The service selects pods with the label `app: frontend`.
+
+  ports:
+    - protocol: TCP      # Specifies that the service uses the TCP protocol.
+      port: 80           # Exposes the service on port 80 inside the cluster.
+      targetPort: 80     # Forwards traffic to port 80 of the frontend container.
+      nodePort: 30007    # The port on the worker nodes where the service will be accessible (used in NodePort type).
+
+  type: NodePort  # Exposes the service externally on the node's IP at the specified `nodePort`.

@@ -1,0 +1,55 @@
+# Specifies the API version for defining a Deployment resource in Kubernetes.
+apiVersion: apps/v1
+# Declares this resource as a Deployment.
+kind: Deployment
+# Metadata section defining the name of the Deployment.
+metadata:
+  name: backend  # Name of the deployment
+
+# Deployment specification starts here.
+spec:
+  replicas: 1  # Specifies the number of pod replicas to run.
+  selector:
+    matchLabels:
+      app: backend  # The label selector to match pods managed by this deployment.
+
+  template:  # Defines the Pod template used for creating replicas.
+    metadata:
+      labels:
+        app: backend  # Labels applied to the pods created by this template.
+
+    spec:  # Specifies the details of the pod's containers.
+      initContainers:  # Init containers are run before the main application container starts.
+      - name: wait-for-mongodb  # Name of the init container.
+        image: alpine  # Using BusyBox image for running basic commands.
+        command: ["sh", "-c", "until nc -z mongodb 27017; do echo waiting for mongodb; sleep 2; done;"] # Command to check if MongoDB is up and running.
+          # This command continuously checks if MongoDB is available on port 27017.
+          # If not, it waits for 2 seconds and retries until MongoDB is reachable.
+
+      containers:  # Defines the main application container.
+      - name: backend  # Name of the container.
+        image: maareech/hospital-backend:1.0.0  # Docker image for the backend.
+        ports:
+        - containerPort: 5000  # Exposes container port 5000.
+
+        env:  # Environment variables for the container.
+        - name: MONGO_URI
+          value: mongodb://mongodb:27017/hospital  # MongoDB connection string.
+
+---
+# Defines a Kubernetes Service to expose the backend.
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend  # Name of the service.
+
+spec:
+  selector:
+    app: backend  # Selects the pods with the label "app: backend".
+
+  ports:
+    - protocol: TCP  # Uses TCP as the network protocol.
+      port: 5000  # Exposes port 5000 on the service.
+      targetPort: 5000  # Routes traffic to port 5000 of the container.
+
+  type: ClusterIP  # This service is only accessible within the cluster.

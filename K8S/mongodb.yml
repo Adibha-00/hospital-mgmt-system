@@ -1,0 +1,39 @@
+apiVersion: apps/v1  # Specifies the API version for the Deployment resource.
+kind: Deployment  # Defines the type of Kubernetes resource (Deployment).
+metadata:
+  name: mongodb  # Name of the Deployment.
+spec:
+  replicas: 1  # Number of pod replicas to maintain.
+  selector:
+    matchLabels:
+      app: mongodb  # Ensures the Deployment manages pods with this label.
+  template:  # Describes the pod specification.
+    metadata:
+      labels:
+        app: mongodb  # Labels assigned to the pod (used by the Service to select pods).
+    spec:
+      containers:  # Defines the container(s) inside the pod.
+        - name: mongodb  # Name of the container.
+          image: mongo:latest  # Uses the official MongoDB image from Docker Hub.
+          ports:
+            - containerPort: 27017  # Exposes MongoDB on port 27017 inside the container.
+          volumeMounts:  # Defines volumes to be mounted inside the container.
+            - name: mongodb-data  # References the volume defined below.
+              mountPath: /data/db  # Mounts the volume at `/data/db` (MongoDB's default data directory).
+      volumes:  # Defines storage volumes for the pod.
+        - name: mongodb-data  # Volume name.
+          emptyDir: {}  # Uses an ephemeral volume that is deleted when the pod stops.
+
+---
+apiVersion: v1  # Specifies the API version for the Service resource.
+kind: Service  # Defines the type of Kubernetes resource (Service).
+metadata:
+  name: mongodb  # Name of the Service.
+spec:
+  selector:
+    app: mongodb  # Selects pods with the label `app: mongodb` to route traffic to.
+  ports:
+    - protocol: TCP  # Specifies the network protocol (TCP).
+      port: 27017  # Exposes the service on port 27017 inside the cluster.
+      targetPort: 27017  # Routes traffic to the MongoDB container's port.
+  clusterIP: None  # Creates a headless service, allowing direct pod-to-pod communication.
