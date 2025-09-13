@@ -1,0 +1,18 @@
+name: Clone Repository
+
+on:
+  workflow_dispatch:  # lets you trigger it manually from the Actions tab
+  push:               # also runs when code is pushed
+    branches:
+      - master
+
+jobs:
+  clone:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: List files
+        run: ls -la
