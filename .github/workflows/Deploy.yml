@@ -5,7 +5,6 @@ on:
   push:               # also runs when code is pushed
     branches:
       - master
-
 jobs:
   clone:
     runs-on: ubuntu-latest
